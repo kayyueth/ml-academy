@@ -213,14 +213,14 @@ const modules = [
     title: "From theory to experimentation",
     summary: "The best way to internalize these ideas is to experiment with tradeoffs and observe how they change tournament outcomes.",
     paragraphs: [
-      "Your simulator settings represent three practical tradeoffs. Signal strength approximates how predictive your model is. Diversity approximates how distinct your predictions are from the pack. Overfitting risk penalizes models that look good for the wrong reasons.",
-      "The simulated score is not Numerai's real metric and should not be treated as one. It is a teaching device for how multiple dimensions of model quality interact.",
-      "When you change one slider, watch how era score, stability, and tournament score move together or apart. That gap is the lesson."
+      "A useful simulator should let you practice the real loop: inspect the round, choose features, pick a model style, size conviction, and review whether the apparent edge survives hidden eras.",
+      "The point is not exact market realism. The point is repeated, disciplined exposure to tradeoffs among signal, diversity, regime sensitivity, and overfitting.",
+      "Use the simulator below as a practice arena. The feedback system matters more than the score because the goal is to sharpen judgment."
     ],
     points: [
       { heading: "Tradeoff view", body: "Model quality rarely lives on one axis." },
-      { heading: "Simulation", body: "A simplified environment helps intuition without pretending to be production finance." },
-      { heading: "Experimentation", body: "Small, repeated changes are often the fastest teacher." }
+      { heading: "Practice loop", body: "Inspect, choose, submit, review, and adjust." },
+      { heading: "Experimentation", body: "Small repeated rounds build durable intuition." }
     ],
     quiz: {
       question: "What is the simulator meant to teach?",
@@ -235,10 +235,68 @@ const modules = [
   }
 ];
 
+const featureLibrary = [
+  { id: "quality", name: "Quality", type: "stable", description: "Slow-moving fundamentals with reliable medium-strength signal.", baseSignal: 22, volatility: 6, trap: 0, regimeAffinity: ["risk_off", "balanced"] },
+  { id: "momentum", name: "Momentum", type: "regime", description: "Fast-moving trend features that strengthen in aggressive regimes.", baseSignal: 18, volatility: 14, trap: 0, regimeAffinity: ["momentum", "risk_on"] },
+  { id: "value", name: "Value", type: "stable", description: "Mean-reversion oriented features that reward patience.", baseSignal: 20, volatility: 8, trap: 0, regimeAffinity: ["balanced", "risk_off"] },
+  { id: "alternative", name: "Alternative", type: "weak", description: "Messy but occasionally additive signal with moderate uniqueness.", baseSignal: 13, volatility: 12, trap: 0, regimeAffinity: ["risk_on", "balanced"] },
+  { id: "macro", name: "Macro", type: "regime", description: "Contextual macro regime features that can help or hurt sharply.", baseSignal: 12, volatility: 18, trap: 0, regimeAffinity: ["risk_off"] },
+  { id: "sentiment", name: "Sentiment", type: "weak", description: "Short-horizon mood features with unstable but sometimes useful edge.", baseSignal: 11, volatility: 16, trap: 0, regimeAffinity: ["momentum"] },
+  { id: "leakage", name: "Leakage Trap", type: "trap", description: "Looks amazing in sample, but tends to collapse in live eras.", baseSignal: 8, volatility: 24, trap: 24, regimeAffinity: ["balanced"] },
+  { id: "noise", name: "Noise Cluster", type: "decoy", description: "Decorative features that add complexity without signal.", baseSignal: 3, volatility: 20, trap: 8, regimeAffinity: ["risk_on"] }
+];
+
+const modelArchetypes = [
+  {
+    id: "linear",
+    name: "Linear Blend",
+    summary: "Stable, interpretable, usually under-reacts instead of overfitting.",
+    strength: 10,
+    stability: 16,
+    complexityBias: -10,
+    fit: ["stable", "weak"]
+  },
+  {
+    id: "tree",
+    name: "Tree Hunter",
+    summary: "Finds interactions quickly, but pays for excess complexity.",
+    strength: 16,
+    stability: 2,
+    complexityBias: 10,
+    fit: ["regime", "stable", "trap"]
+  },
+  {
+    id: "ensemble",
+    name: "Diversified Ensemble",
+    summary: "Balanced approach that rewards mixed signals and regularization.",
+    strength: 13,
+    stability: 12,
+    complexityBias: 2,
+    fit: ["stable", "weak", "regime"]
+  }
+];
+
+const storageKey = "ml-academy-simulator-state-v1";
+
+const defaultSimState = {
+  bankroll: 100,
+  roundNumber: 1,
+  selectedFeatureIds: ["quality", "value"],
+  selectedModelId: "linear",
+  complexity: 48,
+  regularization: 56,
+  stake: 24,
+  history: [],
+  currentRound: null,
+  preview: null,
+  result: null
+};
+
 const state = {
   selectedModuleId: modules[0].id,
   completed: new Set(),
-  quizAnswered: new Map()
+  quizAnswered: new Map(),
+  sim: loadSimState()
 };
 
 const moduleNav = document.getElementById("moduleNav");
@@ -256,16 +314,42 @@ const progressFill = document.getElementById("progressFill");
 const progressText = document.getElementById("progressText");
 const markCompleteButton = document.getElementById("markCompleteButton");
 
-const signalStrength = document.getElementById("signalStrength");
-const diversity = document.getElementById("diversity");
-const overfittingRisk = document.getElementById("overfittingRisk");
-const signalStrengthValue = document.getElementById("signalStrengthValue");
-const diversityValue = document.getElementById("diversityValue");
-const overfittingRiskValue = document.getElementById("overfittingRiskValue");
-const runSimulationButton = document.getElementById("runSimulationButton");
-const simulationMetrics = document.getElementById("simulationMetrics");
-const simulationTable = document.getElementById("simulationTable");
-const simulationInsight = document.getElementById("simulationInsight");
+const newRoundButton = document.getElementById("newRoundButton");
+const roundHub = document.getElementById("roundHub");
+const regimeBadge = document.getElementById("regimeBadge");
+const roundMeta = document.getElementById("roundMeta");
+const featureGroups = document.getElementById("featureGroups");
+const modelOptions = document.getElementById("modelOptions");
+const complexity = document.getElementById("complexity");
+const regularization = document.getElementById("regularization");
+const stake = document.getElementById("stake");
+const complexityValue = document.getElementById("complexityValue");
+const regularizationValue = document.getElementById("regularizationValue");
+const stakeValue = document.getElementById("stakeValue");
+const strategyWarnings = document.getElementById("strategyWarnings");
+const previewButton = document.getElementById("previewButton");
+const submitButton = document.getElementById("submitButton");
+const previewMetrics = document.getElementById("previewMetrics");
+const previewTable = document.getElementById("previewTable");
+const previewInsight = document.getElementById("previewInsight");
+const resultMetrics = document.getElementById("resultMetrics");
+const resultTable = document.getElementById("resultTable");
+const diagnosisCard = document.getElementById("diagnosisCard");
+const historySummary = document.getElementById("historySummary");
+const historyList = document.getElementById("historyList");
+
+function loadSimState() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(storageKey));
+    return parsed ? { ...defaultSimState, ...parsed } : { ...defaultSimState };
+  } catch {
+    return { ...defaultSimState };
+  }
+}
+
+function saveSimState() {
+  localStorage.setItem(storageKey, JSON.stringify(state.sim));
+}
 
 function getModuleById(id) {
   return modules.find((module) => module.id === id);
@@ -374,11 +458,11 @@ function renderProgress() {
   progressFill.style.width = `${percent}%`;
 
   if (completedCount === total) {
-    progressText.textContent = "All sections complete. Use the simulator to keep testing tradeoffs.";
+    progressText.textContent = "All sections complete. Use the simulator to pressure-test your judgment loop.";
   } else if (completedCount >= 6) {
-    progressText.textContent = "You have enough theory to connect model quality, distribution shift, and tournament thinking.";
+    progressText.textContent = "You now have enough theory to connect validation discipline, regime shifts, and staking behavior.";
   } else if (completedCount >= 3) {
-    progressText.textContent = "The foundation is in place. The next block connects central training to distributed learning.";
+    progressText.textContent = "The foundation is set. Keep moving toward distributed learning and tournament decision-making.";
   } else {
     progressText.textContent = "Start with the basics, then move into distributed learning and tournament practice.";
   }
@@ -391,125 +475,611 @@ function renderApp() {
   renderProgress();
 }
 
-markCompleteButton.addEventListener("click", () => {
-  state.completed.add(state.selectedModuleId);
-  renderApp();
-});
+function clamp(value, min = 0, max = 100) {
+  return Math.max(min, Math.min(max, value));
+}
 
-function scoreModel({ strength, diversityScore, overfit }) {
-  const eraScore = strength * 0.72 + diversityScore * 0.28 - overfit * 0.15 + Math.random() * 4;
-  const stability = 100 - overfit * 0.68 + diversityScore * 0.24 + Math.random() * 5;
-  const uniqueness = diversityScore * 0.78 + (100 - overfit) * 0.12 + Math.random() * 3;
-  const tournamentScore = eraScore * 0.45 + stability * 0.35 + uniqueness * 0.2;
+function average(values) {
+  if (!values.length) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function sample(list, random) {
+  return list[Math.floor(random() * list.length)];
+}
+
+function makeRandom(seed) {
+  let value = seed % 2147483647;
+  if (value <= 0) value += 2147483646;
+  return () => {
+    value = value * 16807 % 2147483647;
+    return (value - 1) / 2147483646;
+  };
+}
+
+function generateRound(roundNumber) {
+  const seed = 1000 + roundNumber * 37;
+  const random = makeRandom(seed);
+  const regimes = ["balanced", "risk_on", "risk_off", "momentum"];
+  const regime = sample(regimes, random);
+  const noiseLevel = 18 + Math.floor(random() * 28);
+  const liveShift = 8 + Math.floor(random() * 18);
+  const trainEras = 4;
+  const validationEras = 3;
+  const liveEras = 3;
+
+  const visibleFeatures = featureLibrary.map((feature) => {
+    const featureRandom = makeRandom(seed + feature.id.length * 91);
+    const apparentStrength = clamp(feature.baseSignal + feature.volatility * 0.45 + featureRandom() * 18);
+    return {
+      ...feature,
+      apparentStrength: Number(apparentStrength.toFixed(1))
+    };
+  });
 
   return {
-    eraScore: clamp(eraScore),
-    stability: clamp(stability),
-    uniqueness: clamp(uniqueness),
-    tournamentScore: clamp(tournamentScore)
+    id: `round-${roundNumber}`,
+    roundNumber,
+    seed,
+    regime,
+    noiseLevel,
+    liveShift,
+    trainEras,
+    validationEras,
+    liveEras,
+    visibleFeatures
   };
 }
 
-function clamp(value) {
-  return Math.max(0, Math.min(100, Number(value.toFixed(1))));
+function getCurrentRound() {
+  if (!state.sim.currentRound) {
+    state.sim.currentRound = generateRound(state.sim.roundNumber);
+    saveSimState();
+  }
+  return state.sim.currentRound;
 }
 
-function renderSimulation() {
-  signalStrengthValue.textContent = signalStrength.value;
-  diversityValue.textContent = diversity.value;
-  overfittingRiskValue.textContent = overfittingRisk.value;
+function evaluateStrategy({ round, selectedFeatureIds, modelId, complexityValue, regularizationValue, stakeValue }) {
+  const model = modelArchetypes.find((item) => item.id === modelId);
+  const selected = round.visibleFeatures.filter((feature) => selectedFeatureIds.includes(feature.id));
+  const featureCount = selected.length;
+  const signalScore = selected.reduce((sum, feature) => {
+    const regimeBonus = feature.regimeAffinity.includes(round.regime) ? 8 : -3;
+    const fitBonus = model.fit.includes(feature.type) ? 6 : -2;
+    const stabilityDiscount = feature.type === "stable" ? 3 : 0;
+    return sum + feature.baseSignal + regimeBonus + fitBonus + stabilityDiscount;
+  }, 0);
+  const trapExposure = selected.reduce((sum, feature) => sum + feature.trap, 0);
+  const decoyExposure = selected.filter((feature) => feature.type === "decoy").length * 9;
+  const diversityScore = clamp(
+    selected.reduce((sum, feature) => {
+      if (feature.type === "weak") return sum + 15;
+      if (feature.type === "regime") return sum + 11;
+      if (feature.type === "stable") return sum + 7;
+      return sum + 2;
+    }, 0) - Math.max(0, featureCount - 3) * 6 + regularizationValue * 0.12
+  );
+  const complexityPenalty = Math.max(0, complexityValue - regularizationValue * 0.72) * 0.48;
+  const modelBias = model.strength + model.complexityBias * (complexityValue / 100) + model.stability * (regularizationValue / 100);
+  const overfitRisk = clamp(trapExposure * 1.8 + decoyExposure + complexityPenalty + Math.max(0, featureCount - 4) * 7 - regularizationValue * 0.35);
+  const trainScore = clamp(34 + signalScore * 0.7 + modelBias + complexityValue * 0.22 + trapExposure * 0.85 - round.noiseLevel * 0.2);
+  const validationScore = clamp(trainScore - overfitRisk * 0.24 - round.noiseLevel * 0.3 + diversityScore * 0.12);
+  const liveScore = clamp(validationScore - overfitRisk * 0.18 - round.liveShift * 0.44 + diversityScore * 0.1 - Math.abs(complexityValue - regularizationValue) * 0.1);
+  const stabilityScore = clamp(66 + model.stability - overfitRisk * 0.42 - round.liveShift * 0.25 + regularizationValue * 0.2);
+  const uniquenessScore = clamp(30 + diversityScore * 0.7 - selected.filter((feature) => feature.type === "stable").length * 4 + selected.filter((feature) => feature.type === "weak").length * 5);
+  const confidenceMismatch = Math.abs(stakeValue - clamp((validationScore + stabilityScore) / 2, 0, 100)) / 100;
+  const finalScore = clamp(liveScore * 0.5 + stabilityScore * 0.3 + uniquenessScore * 0.2 - confidenceMismatch * 8);
 
-  const yourModel = {
-    name: "Your model",
-    ...scoreModel({
-      strength: Number(signalStrength.value),
-      diversityScore: Number(diversity.value),
-      overfit: Number(overfittingRisk.value)
-    })
+  const eraScores = buildEraScores({
+    round,
+    validationScore,
+    liveScore,
+    stabilityScore,
+    overfitRisk
+  });
+
+  return {
+    roundId: round.id,
+    featureCount,
+    signalScore: Number(signalScore.toFixed(1)),
+    diversityScore: Number(diversityScore.toFixed(1)),
+    overfitRisk: Number(overfitRisk.toFixed(1)),
+    trainScore: Number(trainScore.toFixed(1)),
+    validationScore: Number(validationScore.toFixed(1)),
+    liveScore: Number(liveScore.toFixed(1)),
+    stabilityScore: Number(stabilityScore.toFixed(1)),
+    uniquenessScore: Number(uniquenessScore.toFixed(1)),
+    finalScore: Number(finalScore.toFixed(1)),
+    confidenceMismatch: Number(confidenceMismatch.toFixed(2)),
+    eraScores
+  };
+}
+
+function buildEraScores({ round, validationScore, liveScore, stabilityScore, overfitRisk }) {
+  const random = makeRandom(round.seed + 777);
+  const total = round.trainEras + round.validationEras + round.liveEras;
+  const eras = [];
+
+  for (let index = 0; index < total; index += 1) {
+    let phase = "live";
+    let anchor = liveScore;
+    if (index < round.trainEras) {
+      phase = "train";
+      anchor = validationScore + 5 + overfitRisk * 0.08;
+    } else if (index < round.trainEras + round.validationEras) {
+      phase = "validation";
+      anchor = validationScore;
+    }
+    const jitter = (random() - 0.5) * (phase === "live" ? round.noiseLevel * 0.9 : round.noiseLevel * 0.55);
+    const stabilityPenalty = (100 - stabilityScore) * 0.05 * Math.abs(random() - 0.5);
+    eras.push({
+      name: `Era ${index + 1}`,
+      phase,
+      score: Number(clamp(anchor + jitter - stabilityPenalty).toFixed(1))
+    });
+  }
+
+  return eras;
+}
+
+function getStrategyDraft() {
+  return {
+    round: getCurrentRound(),
+    selectedFeatureIds: state.sim.selectedFeatureIds,
+    modelId: state.sim.selectedModelId,
+    complexityValue: Number(state.sim.complexity),
+    regularizationValue: Number(state.sim.regularization),
+    stakeValue: Number(state.sim.stake)
+  };
+}
+
+function computeWarnings(evaluation) {
+  const warnings = [];
+  if (evaluation.featureCount === 0) {
+    warnings.push({ level: "bad", text: "No feature groups selected. You need at least one signal source." });
+  }
+  if (evaluation.overfitRisk > 62) {
+    warnings.push({ level: "bad", text: "High fragility risk. This setup is likely fitting round-specific noise." });
+  }
+  if (evaluation.validationScore - evaluation.liveScore > 12) {
+    warnings.push({ level: "bad", text: "Large preview-to-live gap risk. Validation strength may not hold across hidden eras." });
+  }
+  if (evaluation.stabilityScore < 48) {
+    warnings.push({ level: "warn", text: "Era stability looks weak. Expect uneven round performance." });
+  }
+  if (evaluation.diversityScore < 26) {
+    warnings.push({ level: "warn", text: "Your signal mix is narrow. You may be too correlated with one style." });
+  }
+  if (!warnings.length) {
+    warnings.push({ level: "good", text: "Balanced draft. The main question is whether your conviction matches the evidence." });
+  }
+  return warnings;
+}
+
+function previewCurrentStrategy() {
+  const evaluation = evaluateStrategy(getStrategyDraft());
+  state.sim.preview = {
+    createdAt: Date.now(),
+    evaluation,
+    warnings: computeWarnings(evaluation)
+  };
+  saveSimState();
+  renderSimulator();
+}
+
+function getDiagnosis({ evaluation, round, stakeValue, previousHistory }) {
+  const selectedFeatures = round.visibleFeatures.filter((feature) => state.sim.selectedFeatureIds.includes(feature.id));
+  const previous = previousHistory[0];
+  let primary = "Balanced execution";
+  let explanation = "The round result reflects a reasonably disciplined strategy selection with no dominant failure mode.";
+  let recommendation = "Keep the same workflow and compare it against at least three more rounds before making large changes.";
+  let evidence = [];
+
+  if (evaluation.overfitRisk > 60 || selectedFeatures.some((feature) => feature.type === "trap")) {
+    primary = "Overfitting";
+    explanation = "The strategy looked stronger in preview than it held up in live eras, which usually points to fitting unstable or deceptive patterns.";
+    recommendation = "Reduce complexity, drop the Leakage Trap group, and demand stable era performance before raising stake.";
+    evidence = [
+      `Preview-to-live drop: ${(evaluation.validationScore - evaluation.liveScore).toFixed(1)} points.`,
+      `Fragility score: ${evaluation.overfitRisk.toFixed(1)}.`,
+      selectedFeatures.some((feature) => feature.type === "trap") ? "Leakage Trap was selected." : "Too much complexity relative to regularization."
+    ];
+  } else if (evaluation.trainScore < 55 && evaluation.liveScore < 50) {
+    primary = "Underfitting";
+    explanation = "The setup was too conservative to capture the signal available in this round.";
+    recommendation = "Add one more relevant feature group or use a model that can exploit interactions without overshooting.";
+    evidence = [
+      `Train preview was only ${evaluation.trainScore.toFixed(1)}.`,
+      `Live score remained weak at ${evaluation.liveScore.toFixed(1)}.`,
+      "The model left signal on the table rather than blowing up."
+    ];
+  } else if (evaluation.diversityScore < 24) {
+    primary = "Weak feature choice";
+    explanation = "The selected feature mix was too narrow to create a differentiated signal.";
+    recommendation = "Blend one stable group with one weak or regime-sensitive group to improve uniqueness without inviting chaos.";
+    evidence = [
+      `Diversity score: ${evaluation.diversityScore.toFixed(1)}.`,
+      `Selected feature groups: ${selectedFeatures.map((feature) => feature.name).join(", ")}.`,
+      "The strategy depended on a limited view of the round."
+    ];
+  } else if (evaluation.stabilityScore < 46) {
+    primary = "Unstable strategy";
+    explanation = "Performance swung too much across eras to trust the result.";
+    recommendation = "Use more regularization or move to a steadier model archetype before increasing conviction.";
+    evidence = [
+      `Stability score: ${evaluation.stabilityScore.toFixed(1)}.`,
+      `Live regime shift: ${round.liveShift}.`,
+      "Era outcomes are too uneven for a high-conviction submission."
+    ];
+  } else if (stakeValue > evaluation.validationScore + 12 || stakeValue > evaluation.stabilityScore + 16) {
+    primary = "Overconfidence in staking";
+    explanation = "Your conviction level ran ahead of the evidence available at submit time.";
+    recommendation = "Treat stake as a calibration problem. Size up only after repeated stable previews, not one attractive score.";
+    evidence = [
+      `Stake: ${stakeValue}.`,
+      `Validation score: ${evaluation.validationScore.toFixed(1)}.`,
+      `Stability score: ${evaluation.stabilityScore.toFixed(1)}.`
+    ];
+  } else if (previous && Math.abs(previous.complexity - state.sim.complexity) > 30 && previous.primaryDiagnosis !== "Balanced execution") {
+    primary = "Reacting to noise";
+    explanation = "The round-to-round strategy shift was larger than the evidence justified, which can turn a learning process into random thrashing.";
+    recommendation = "Change one lever at a time and compare outcomes over several rounds before rewriting your playbook.";
+    evidence = [
+      `Complexity moved from ${previous.complexity} to ${state.sim.complexity}.`,
+      `Last diagnosis: ${previous.primaryDiagnosis}.`,
+      "Large swings after one result usually reduce learning clarity."
+    ];
+  } else if (stakeValue < Math.max(10, evaluation.validationScore - 35) && evaluation.liveScore > 63) {
+    primary = "Underconfidence";
+    explanation = "You found a robust setup but did not size your conviction to match it.";
+    recommendation = "Increase stake gradually when both validation and stability are consistently strong.";
+    evidence = [
+      `Stake: ${stakeValue}.`,
+      `Live score: ${evaluation.liveScore.toFixed(1)}.`,
+      `Stability score: ${evaluation.stabilityScore.toFixed(1)}.`
+    ];
+  } else {
+    evidence = [
+      `Live score: ${evaluation.liveScore.toFixed(1)}.`,
+      `Stability score: ${evaluation.stabilityScore.toFixed(1)}.`,
+      `Uniqueness score: ${evaluation.uniquenessScore.toFixed(1)}.`
+    ];
+  }
+
+  return { primary, explanation, recommendation, evidence };
+}
+
+function submitCurrentStrategy() {
+  if (!state.sim.selectedFeatureIds.length) {
+    state.sim.result = {
+      blocked: true,
+      message: "Select at least one feature group before submitting a round."
+    };
+    renderSimulator();
+    return;
+  }
+
+  const round = getCurrentRound();
+  const evaluation = evaluateStrategy(getStrategyDraft());
+  const payout = Number((((evaluation.finalScore - 50) / 50) * (state.sim.stake / 10)).toFixed(2));
+  state.sim.bankroll = Number(Math.max(0, state.sim.bankroll + payout).toFixed(2));
+  const diagnosis = getDiagnosis({
+    evaluation,
+    round,
+    stakeValue: Number(state.sim.stake),
+    previousHistory: state.sim.history
+  });
+
+  const historyEntry = {
+    roundNumber: round.roundNumber,
+    regime: round.regime,
+    modelId: state.sim.selectedModelId,
+    modelName: modelArchetypes.find((item) => item.id === state.sim.selectedModelId).name,
+    features: [...state.sim.selectedFeatureIds],
+    stake: Number(state.sim.stake),
+    complexity: Number(state.sim.complexity),
+    regularization: Number(state.sim.regularization),
+    payout,
+    bankroll: state.sim.bankroll,
+    finalScore: evaluation.finalScore,
+    liveScore: evaluation.liveScore,
+    validationScore: evaluation.validationScore,
+    stabilityScore: evaluation.stabilityScore,
+    overfitRisk: evaluation.overfitRisk,
+    primaryDiagnosis: diagnosis.primary
   };
 
-  const benchmark = {
-    name: "Benchmark",
-    ...scoreModel({
-      strength: 74,
-      diversityScore: 30,
-      overfit: 48
-    })
+  state.sim.result = {
+    blocked: false,
+    round,
+    evaluation,
+    payout,
+    diagnosis
   };
+  state.sim.history = [historyEntry, ...state.sim.history].slice(0, 8);
+  state.sim.preview = null;
+  state.sim.roundNumber += 1;
+  state.sim.currentRound = generateRound(state.sim.roundNumber);
+  saveSimState();
+  renderSimulator();
+}
 
-  const conservative = {
-    name: "Conservative",
-    ...scoreModel({
-      strength: 61,
-      diversityScore: 53,
-      overfit: 14
-    })
-  };
+function resetRound() {
+  state.sim.preview = null;
+  state.sim.result = null;
+  state.sim.currentRound = generateRound(state.sim.roundNumber);
+  saveSimState();
+  renderSimulator();
+}
 
-  const ranking = [yourModel, benchmark, conservative].sort((a, b) => b.tournamentScore - a.tournamentScore);
-
-  const leader = ranking[0];
-  const metrics = [
-    { label: "Leader", value: leader.name },
-    { label: "Best tournament score", value: leader.tournamentScore.toFixed(1) },
-    { label: "Your placement", value: `${ranking.findIndex((model) => model.name === "Your model") + 1} / 3` }
+function renderRoundHub(round) {
+  const latest = state.sim.history[0];
+  const cards = [
+    { label: "Current round", value: `#${round.roundNumber}` },
+    { label: "Bankroll", value: `${state.sim.bankroll.toFixed(2)} staked units` },
+    { label: "Last diagnosis", value: latest ? latest.primaryDiagnosis : "No rounds yet" }
   ];
 
-  simulationMetrics.innerHTML = metrics.map((metric) => `
+  roundHub.innerHTML = cards.map((card) => `
     <article class="metric-card">
-      <span>${metric.label}</span>
-      <strong>${metric.value}</strong>
+      <span>${card.label}</span>
+      <strong>${card.value}</strong>
+    </article>
+  `).join("");
+}
+
+function renderRoundMeta(round) {
+  regimeBadge.textContent = round.regime.replace("_", " ");
+  roundMeta.innerHTML = [
+    { label: "Noise", value: `${round.noiseLevel}` },
+    { label: "Live shift", value: `${round.liveShift}` },
+    { label: "Eras", value: `${round.trainEras}/${round.validationEras}/${round.liveEras}` }
+  ].map((item) => `
+    <div class="meta-card">
+      <span>${item.label}</span>
+      <strong>${item.value}</strong>
+    </div>
+  `).join("");
+}
+
+function renderFeatureGroups(round) {
+  featureGroups.innerHTML = "";
+  round.visibleFeatures.forEach((feature) => {
+    const selected = state.sim.selectedFeatureIds.includes(feature.id);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `feature-card ${selected ? "selected" : ""}`;
+    button.innerHTML = `
+      <strong>${feature.name}</strong>
+      <span class="feature-type">${feature.type}</span>
+      <p>${feature.description}</p>
+      <span class="feature-strength">apparent train strength ${feature.apparentStrength}</span>
+    `;
+    button.addEventListener("click", () => {
+      if (selected) {
+        state.sim.selectedFeatureIds = state.sim.selectedFeatureIds.filter((id) => id !== feature.id);
+      } else {
+        state.sim.selectedFeatureIds = [...state.sim.selectedFeatureIds, feature.id];
+      }
+      state.sim.preview = null;
+      saveSimState();
+      renderSimulator();
+    });
+    featureGroups.appendChild(button);
+  });
+}
+
+function renderModelOptions() {
+  modelOptions.innerHTML = "";
+  modelArchetypes.forEach((model) => {
+    const selected = state.sim.selectedModelId === model.id;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `model-card ${selected ? "selected" : ""}`;
+    button.innerHTML = `
+      <strong>${model.name}</strong>
+      <p>${model.summary}</p>
+    `;
+    button.addEventListener("click", () => {
+      state.sim.selectedModelId = model.id;
+      state.sim.preview = null;
+      saveSimState();
+      renderSimulator();
+    });
+    modelOptions.appendChild(button);
+  });
+}
+
+function renderStrategyControls(round) {
+  complexity.value = state.sim.complexity;
+  regularization.value = state.sim.regularization;
+  stake.value = state.sim.stake;
+  complexityValue.textContent = state.sim.complexity;
+  regularizationValue.textContent = state.sim.regularization;
+  stakeValue.textContent = state.sim.stake;
+
+  const evaluation = evaluateStrategy(getStrategyDraft());
+  const warnings = computeWarnings(evaluation);
+
+  strategyWarnings.innerHTML = warnings.map((warning) => `
+    <div class="alert ${warning.level}">${warning.text}</div>
+  `).join("");
+
+  submitButton.disabled = !state.sim.selectedFeatureIds.length;
+  submitButton.textContent = `Submit round #${round.roundNumber}`;
+}
+
+function renderPreview() {
+  if (!state.sim.preview) {
+    previewMetrics.innerHTML = `
+      <article class="metric-card">
+        <span>Preview status</span>
+        <strong>Not run</strong>
+      </article>
+    `;
+    previewTable.innerHTML = "";
+    previewInsight.textContent = "Run a preview to inspect train, validation, and hidden-live expectations before submitting.";
+    return;
+  }
+
+  const { evaluation, warnings } = state.sim.preview;
+  previewMetrics.innerHTML = [
+    { label: "Train", value: evaluation.trainScore.toFixed(1) },
+    { label: "Validation", value: evaluation.validationScore.toFixed(1) },
+    { label: "Fragility", value: evaluation.overfitRisk.toFixed(1) }
+  ].map((item) => `
+    <article class="metric-card">
+      <span>${item.label}</span>
+      <strong>${item.value}</strong>
     </article>
   `).join("");
 
-  simulationTable.innerHTML = `
+  previewTable.innerHTML = buildEraTable(evaluation.eraScores);
+  previewInsight.textContent = warnings[0].text;
+}
+
+function buildEraTable(eraScores) {
+  return `
     <table>
       <thead>
         <tr>
-          <th>Model</th>
-          <th>Era score</th>
-          <th>Stability</th>
-          <th>Uniqueness</th>
-          <th>Tournament score</th>
+          <th>Era</th>
+          <th>Phase</th>
+          <th>Score</th>
         </tr>
       </thead>
       <tbody>
-        ${ranking.map((model) => `
+        ${eraScores.map((era) => `
           <tr>
-            <td>${model.name}</td>
-            <td>${model.eraScore.toFixed(1)}</td>
-            <td>${model.stability.toFixed(1)}</td>
-            <td>${model.uniqueness.toFixed(1)}</td>
-            <td>${model.tournamentScore.toFixed(1)}</td>
+            <td>${era.name}</td>
+            <td>${era.phase}</td>
+            <td>${era.score.toFixed(1)}</td>
           </tr>
         `).join("")}
       </tbody>
     </table>
   `;
-
-  const yourRank = ranking.findIndex((model) => model.name === "Your model") + 1;
-  let insight = "Balanced signal and low overfitting tend to outperform short-term spikes.";
-
-  if (yourRank === 1 && Number(overfittingRisk.value) > 60) {
-    insight = "You won this round, but the high overfitting setting means the result is fragile. In a real tournament you would distrust it until it survives more eras.";
-  } else if (yourRank === 1 && Number(diversity.value) < 25) {
-    insight = "You won mostly on raw signal. The next question is whether your model adds anything distinct to an ensemble.";
-  } else if (yourRank === 1) {
-    insight = "Your model leads because it combined predictive strength with enough diversity and acceptable robustness.";
-  } else if (Number(overfittingRisk.value) > 55) {
-    insight = "The loss came mostly from fragility. Strong apparent signal is being penalized because it does not look stable across eras.";
-  } else if (Number(diversity.value) < 30) {
-    insight = "Your model is too correlated with the field. Raising diversity can help even if raw signal changes only a little.";
-  }
-
-  simulationInsight.textContent = insight;
 }
 
-[signalStrength, diversity, overfittingRisk].forEach((input) => {
-  input.addEventListener("input", renderSimulation);
+function renderResult() {
+  if (!state.sim.result) {
+    resultMetrics.innerHTML = `
+      <article class="metric-card">
+        <span>Round status</span>
+        <strong>Waiting</strong>
+      </article>
+    `;
+    resultTable.innerHTML = "";
+    diagnosisCard.innerHTML = "<p class=\"muted\">Submit a round to get a diagnosis and payout review.</p>";
+    return;
+  }
+
+  if (state.sim.result.blocked) {
+    resultMetrics.innerHTML = `
+      <article class="metric-card">
+        <span>Submission blocked</span>
+        <strong>Action needed</strong>
+      </article>
+    `;
+    resultTable.innerHTML = "";
+    diagnosisCard.innerHTML = `<p class="muted">${state.sim.result.message}</p>`;
+    return;
+  }
+
+  const { evaluation, payout, diagnosis } = state.sim.result;
+  resultMetrics.innerHTML = [
+    { label: "Final score", value: evaluation.finalScore.toFixed(1) },
+    { label: "Payout", value: `${payout >= 0 ? "+" : ""}${payout.toFixed(2)}` },
+    { label: "Bankroll", value: state.sim.bankroll.toFixed(2) }
+  ].map((item) => `
+    <article class="metric-card">
+      <span>${item.label}</span>
+      <strong>${item.value}</strong>
+    </article>
+  `).join("");
+
+  resultTable.innerHTML = buildEraTable(evaluation.eraScores);
+  diagnosisCard.innerHTML = `
+    <span class="diagnosis-tag">${diagnosis.primary}</span>
+    <p>${diagnosis.explanation}</p>
+    <ul class="diagnosis-evidence">
+      ${diagnosis.evidence.map((item) => `<li>${item}</li>`).join("")}
+    </ul>
+    <p><strong>Next move:</strong> ${diagnosis.recommendation}</p>
+  `;
+}
+
+function renderHistory() {
+  const history = state.sim.history;
+  const averageScore = history.length ? average(history.map((item) => item.finalScore)).toFixed(1) : "0.0";
+  const biggestPattern = mostCommon(history.map((item) => item.primaryDiagnosis));
+  historySummary.innerHTML = [
+    { label: "Rounds played", value: `${history.length}` },
+    { label: "Avg score", value: averageScore },
+    { label: "Recurring mistake", value: biggestPattern || "None yet" }
+  ].map((item) => `
+    <article class="metric-card">
+      <span>${item.label}</span>
+      <strong>${item.value}</strong>
+    </article>
+  `).join("");
+
+  if (!history.length) {
+    historyList.innerHTML = "<p class=\"muted\">No completed rounds yet. Submit a round to start building your review history.</p>";
+    return;
+  }
+
+  historyList.innerHTML = history.map((item) => `
+    <article class="history-item">
+      <div class="history-header">
+        <strong>Round #${item.roundNumber}</strong>
+        <span class="badge">${item.regime.replace("_", " ")}</span>
+      </div>
+      <p>${item.modelName} | features: ${item.features.join(", ")}</p>
+      <p>Score ${item.finalScore.toFixed(1)} | stake ${item.stake} | payout ${item.payout >= 0 ? "+" : ""}${item.payout.toFixed(2)}</p>
+      <p class="muted">Diagnosis: ${item.primaryDiagnosis}</p>
+    </article>
+  `).join("");
+}
+
+function mostCommon(items) {
+  if (!items.length) return "";
+  const counts = items.reduce((map, item) => {
+    map[item] = (map[item] || 0) + 1;
+    return map;
+  }, {});
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+function renderSimulator() {
+  const round = getCurrentRound();
+  renderRoundHub(round);
+  renderRoundMeta(round);
+  renderFeatureGroups(round);
+  renderModelOptions();
+  renderStrategyControls(round);
+  renderPreview();
+  renderResult();
+  renderHistory();
+}
+
+markCompleteButton.addEventListener("click", () => {
+  state.completed.add(state.selectedModuleId);
+  renderApp();
 });
 
-runSimulationButton.addEventListener("click", renderSimulation);
+[complexity, regularization, stake].forEach((input) => {
+  input.addEventListener("input", () => {
+    state.sim[input.id] = Number(input.value);
+    state.sim.preview = null;
+    saveSimState();
+    renderSimulator();
+  });
+});
+
+previewButton.addEventListener("click", previewCurrentStrategy);
+submitButton.addEventListener("click", submitCurrentStrategy);
+newRoundButton.addEventListener("click", resetRound);
 
 renderApp();
-renderSimulation();
+renderSimulator();

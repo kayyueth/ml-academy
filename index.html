@@ -83,42 +83,99 @@
         <section class="panel simulator-panel">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">Simulation lab</p>
-              <h2>Numerai-style prediction tournament</h2>
+              <p class="eyebrow">Numerai Simulator</p>
+              <h2>Private round-by-round decision trainer</h2>
             </div>
-            <button id="runSimulationButton" class="button" type="button">Run round</button>
+            <button id="newRoundButton" class="button" type="button">Generate new round</button>
           </div>
           <p class="lesson-summary">
-            Adjust model behavior, generate hidden-era performance, and compare which model would rank highest in a tournament focused on robust signals rather than plain accuracy.
+            Practice the workflow: inspect feature groups, choose a model style, preview era behavior, submit with conviction, and review whether you found signal or just noise.
           </p>
 
-          <div class="sim-controls">
-            <label>
-              Signal strength
-              <input id="signalStrength" type="range" min="20" max="95" value="68">
-              <span id="signalStrengthValue">68</span>
-            </label>
-            <label>
-              Diversity
-              <input id="diversity" type="range" min="5" max="90" value="42">
-              <span id="diversityValue">42</span>
-            </label>
-            <label>
-              Overfitting risk
-              <input id="overfittingRisk" type="range" min="0" max="100" value="35">
-              <span id="overfittingRiskValue">35</span>
-            </label>
+          <div id="roundHub" class="metrics-grid"></div>
+
+          <div class="sim-workspace">
+            <section class="subpanel">
+              <div class="subpanel-heading">
+                <div>
+                  <p class="eyebrow">Data Arena</p>
+                  <h3>Feature groups for this round</h3>
+                </div>
+                <span id="regimeBadge" class="badge">Loading</span>
+              </div>
+              <div id="roundMeta" class="meta-grid"></div>
+              <div id="featureGroups" class="feature-grid"></div>
+            </section>
+
+            <section class="subpanel">
+              <div class="subpanel-heading">
+                <div>
+                  <p class="eyebrow">Strategy Lab</p>
+                  <h3>Model and risk setup</h3>
+                </div>
+              </div>
+              <div id="modelOptions" class="model-grid"></div>
+              <div class="sim-controls">
+                <label>
+                  Complexity
+                  <input id="complexity" type="range" min="10" max="100" value="48">
+                  <span id="complexityValue">48</span>
+                </label>
+                <label>
+                  Regularization
+                  <input id="regularization" type="range" min="0" max="100" value="56">
+                  <span id="regularizationValue">56</span>
+                </label>
+                <label>
+                  Stake / conviction
+                  <input id="stake" type="range" min="0" max="100" value="24">
+                  <span id="stakeValue">24</span>
+                </label>
+              </div>
+              <div id="strategyWarnings" class="alert-stack"></div>
+              <div class="action-row">
+                <button id="previewButton" class="button" type="button">Preview strategy</button>
+                <button id="submitButton" class="button secondary" type="button">Submit round</button>
+              </div>
+            </section>
           </div>
 
-          <div class="sim-legend">
-            <div><span class="swatch alpha"></span>Your model</div>
-            <div><span class="swatch beta"></span>Benchmark model</div>
-            <div><span class="swatch gamma"></span>Conservative model</div>
+          <div class="sim-workspace">
+            <section class="subpanel">
+              <div class="subpanel-heading">
+                <div>
+                  <p class="eyebrow">Validation Preview</p>
+                  <h3>Before you submit</h3>
+                </div>
+              </div>
+              <div id="previewMetrics" class="metrics-grid compact"></div>
+              <div id="previewTable" class="simulation-table"></div>
+              <div id="previewInsight" class="quiz-feedback neutral"></div>
+            </section>
+
+            <section class="subpanel">
+              <div class="subpanel-heading">
+                <div>
+                  <p class="eyebrow">Round Review</p>
+                  <h3>Outcome and diagnosis</h3>
+                </div>
+              </div>
+              <div id="resultMetrics" class="metrics-grid compact"></div>
+              <div id="resultTable" class="simulation-table"></div>
+              <div id="diagnosisCard" class="diagnosis-card"></div>
+            </section>
           </div>
 
-          <div id="simulationMetrics" class="metrics-grid"></div>
-          <div id="simulationTable" class="simulation-table"></div>
-          <div id="simulationInsight" class="quiz-feedback neutral"></div>
+          <section class="subpanel history-panel">
+            <div class="subpanel-heading">
+              <div>
+                <p class="eyebrow">Review Dashboard</p>
+                <h3>Recent rounds and recurring mistakes</h3>
+              </div>
+            </div>
+            <div id="historySummary" class="metrics-grid compact"></div>
+            <div id="historyList" class="history-list"></div>
+          </section>
         </section>
       </section>
     </main>
