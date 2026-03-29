@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ml-academy: ML, Federated Learning, and Tournament Simulation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">ml-academy</p>
+        <h1>Learn machine learning from fundamentals to federated systems and a Numerai-style prediction tournament.</h1>
+        <p class="hero-text">
+          Work through compact lessons, answer quick theory checks, and experiment with a simulated model tournament that mirrors the idea of submitting signals on hidden data.
+        </p>
+      </div>
+      <div class="hero-card">
+        <div class="hero-stat">
+          <span class="stat-label">Tracks</span>
+          <strong>3</strong>
+        </div>
+        <div class="hero-stat">
+          <span class="stat-label">Lessons</span>
+          <strong>9</strong>
+        </div>
+        <div class="hero-stat">
+          <span class="stat-label">Mode</span>
+          <strong>Hands-on</strong>
+        </div>
+      </div>
+    </header>
+
+    <main class="content-grid">
+      <aside class="sidebar">
+        <section class="panel progress-panel">
+          <div class="panel-heading">
+            <h2>Progress</h2>
+            <span id="progressBadge">0 / 9 complete</span>
+          </div>
+          <div class="progress-bar" aria-hidden="true">
+            <div id="progressFill" class="progress-fill"></div>
+          </div>
+          <p id="progressText" class="muted">Start with the basics, then move into distributed learning and tournament practice.</p>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>Learning Path</h2>
+          </div>
+          <nav id="moduleNav" class="module-nav" aria-label="Learning modules"></nav>
+        </section>
+      </aside>
+
+      <section class="main-column">
+        <section class="panel lesson-panel">
+          <div class="panel-heading">
+            <div>
+              <p id="lessonTag" class="eyebrow"></p>
+              <h2 id="lessonTitle">Loading…</h2>
+            </div>
+            <button id="markCompleteButton" class="button secondary" type="button">Mark complete</button>
+          </div>
+          <p id="lessonSummary" class="lesson-summary"></p>
+          <div id="lessonContent" class="lesson-content"></div>
+          <div id="keyPoints" class="key-points"></div>
+        </section>
+
+        <section class="panel quiz-panel">
+          <div class="panel-heading">
+            <h2>Quick Check</h2>
+            <span id="quizStatus" class="muted">Choose an answer</span>
+          </div>
+          <div id="quizQuestion" class="quiz-question"></div>
+          <div id="quizOptions" class="quiz-options"></div>
+          <div id="quizFeedback" class="quiz-feedback" aria-live="polite"></div>
+        </section>
+
+        <section class="panel simulator-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Simulation lab</p>
+              <h2>Numerai-style prediction tournament</h2>
+            </div>
+            <button id="runSimulationButton" class="button" type="button">Run round</button>
+          </div>
+          <p class="lesson-summary">
+            Adjust model behavior, generate hidden-era performance, and compare which model would rank highest in a tournament focused on robust signals rather than plain accuracy.
+          </p>
+
+          <div class="sim-controls">
+            <label>
+              Signal strength
+              <input id="signalStrength" type="range" min="20" max="95" value="68">
+              <span id="signalStrengthValue">68</span>
+            </label>
+            <label>
+              Diversity
+              <input id="diversity" type="range" min="5" max="90" value="42">
+              <span id="diversityValue">42</span>
+            </label>
+            <label>
+              Overfitting risk
+              <input id="overfittingRisk" type="range" min="0" max="100" value="35">
+              <span id="overfittingRiskValue">35</span>
+            </label>
+          </div>
+
+          <div class="sim-legend">
+            <div><span class="swatch alpha"></span>Your model</div>
+            <div><span class="swatch beta"></span>Benchmark model</div>
+            <div><span class="swatch gamma"></span>Conservative model</div>
+          </div>
+
+          <div id="simulationMetrics" class="metrics-grid"></div>
+          <div id="simulationTable" class="simulation-table"></div>
+          <div id="simulationInsight" class="quiz-feedback neutral"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
