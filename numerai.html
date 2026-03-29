@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ml-academy: Numerai Simulator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell numerai-page-shell">
+    <header class="hero numerai-hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Numerai Simulator</p>
+        <h1>Train the real workflow: download, build, generate, submit, stake, and review.</h1>
+        <p class="hero-text">
+          This is a standalone simulator page designed to feel like a Numerai operating console while still using synthetic data and a simulated backend.
+        </p>
+      </div>
+      <div class="hero-card">
+        <div class="hero-stat"><span class="stat-label">Mode</span><strong>Independent</strong></div>
+        <div class="hero-stat"><span class="stat-label">Training loop</span><strong>Python + UI</strong></div>
+        <div class="hero-stat"><span class="stat-label">Home</span><strong><a class="hero-link" href="index.html">Lessons</a></strong></div>
+      </div>
+    </header>
+
+    <section class="panel simulator-panel standalone-simulator-panel">
+      <div class="platform-shell">
+        <div class="platform-header">
+          <div>
+            <p class="eyebrow">Tournament Console</p>
+            <h2>Private Numerai-style workflow trainer</h2>
+          </div>
+          <div class="platform-actions">
+            <button id="resolveRoundButton" class="button secondary" type="button">Resolve Round</button>
+            <button id="nextRoundButton" class="button" type="button">Next Round</button>
+          </div>
+        </div>
+
+        <div id="platformSummary" class="metrics-grid"></div>
+        <nav id="simNav" class="sim-nav" aria-label="Simulator Sections"></nav>
+
+        <div class="platform-body wider-platform-body">
+          <aside class="platform-sidebar">
+            <section class="subpanel">
+              <div class="subpanel-heading"><div><p class="eyebrow">Tournament</p><h3>Round Status</h3></div><span id="roundStatusBadge" class="badge">Pending</span></div>
+              <div id="roundMeta" class="meta-grid stacked"></div>
+            </section>
+            <section class="subpanel">
+              <div class="subpanel-heading"><div><p class="eyebrow">Wallet</p><h3>Simulated NMR</h3></div></div>
+              <div id="walletSummary" class="meta-grid stacked"></div>
+            </section>
+            <section class="subpanel">
+              <div class="subpanel-heading"><div><p class="eyebrow">Journal</p><h3>Strategy Notes</h3></div></div>
+              <textarea id="strategyNotes" class="notes-input" placeholder="What changed this round? Why do you trust this setup? What would invalidate it?"></textarea>
+            </section>
+          </aside>
+
+          <section class="platform-main">
+            <section id="screen-dashboard" class="screen-panel active">
+              <div class="screen-header"><div><p class="eyebrow">Dashboard</p><h3>Current submission and round state</h3></div></div>
+              <div id="dashboardCards" class="metrics-grid"></div>
+              <div class="double-grid">
+                <section class="subpanel inset"><div class="subpanel-heading"><div><p class="eyebrow">Submission</p><h3>Current Status</h3></div></div><div id="submissionStatusCard"></div></section>
+                <section class="subpanel inset"><div class="subpanel-heading"><div><p class="eyebrow">Behavior</p><h3>Pattern Summary</h3></div></div><div id="dashboardPatternCard"></div></section>
+              </div>
+            </section>
+
+            <section id="screen-data" class="screen-panel">
+              <div class="screen-header"><div><p class="eyebrow">Data Download</p><h3>Dataset Package</h3></div><button id="downloadDatasetButton" class="button secondary" type="button">Download Package</button></div>
+              <div id="downloadCards" class="metrics-grid compact"></div>
+              <div class="double-grid">
+                <section class="subpanel inset"><div class="subpanel-heading"><div><p class="eyebrow">Files</p><h3>Available Artifacts</h3></div></div><div id="downloadTable" class="simulation-table"></div></section>
+                <section class="subpanel inset"><div class="subpanel-heading"><div><p class="eyebrow">Features</p><h3>Universe</h3></div></div><div id="featureGroups" class="feature-grid"></div></section>
+              </div>
+            </section>
+
+            <section id="screen-strategy" class="screen-panel">
+              <div class="screen-header"><div><p class="eyebrow">Strategy</p><h3>Model Workspace</h3></div><button id="generatePredictionsButton" class="button" type="button">Generate Predictions</button></div>
+              <div id="modelOptions" class="model-grid"></div>
+              <div class="sim-controls">
+                <label>Complexity<input id="complexity" type="range" min="10" max="100" value="48"><span id="complexityValue">48</span></label>
+                <label>Regularization<input id="regularization" type="range" min="0" max="100" value="56"><span id="regularizationValue">56</span></label>
+                <label>Diversity Bias<input id="diversityBias" type="range" min="0" max="100" value="42"><span id="diversityBiasValue">42</span></label>
+              </div>
+              <div id="strategyWarnings" class="alert-stack"></div>
+              <div class="double-grid">
+                <section class="subpanel inset"><div class="subpanel-heading"><div><p class="eyebrow">Preview</p><h3>Validation Metrics</h3></div></div><div id="previewMetrics" class="metrics-grid compact"></div></section>
+                <section class="subpanel inset"><div class="subpanel-heading"><div><p class="eyebrow">Eras</p><h3>Expected Behavior</h3></div></div><div id="previewTable" class="simulation-table"></div></section>
+              </div>
+            </section>
+
+            <section id="screen-python" class="screen-panel">
+              <div class="screen-header"><div><p class="eyebrow">Python Interface</p><h3>Sample training code and command</h3></div></div>
+              <div class="double-grid python-grid">
+                <section class="subpanel inset">
+                  <div class="subpanel-heading"><div><p class="eyebrow">Command</p><h3>Training entrypoint</h3></div></div>
+                  <div id="pythonCommandCard" class="artifact-card"></div>
+                </section>
+                <section class="subpanel inset">
+                  <div class="subpanel-heading"><div><p class="eyebrow">Workflow</p><h3>What the script mimics</h3></div></div>
+                  <div id="pythonWorkflowCard" class="status-card"></div>
+                </section>
+              </div>
+              <section class="subpanel inset code-panel">
+                <div class="subpanel-heading"><div><p class="eyebrow">Sample Code</p><h3>Python training example</h3></div></div>
+                <pre id="pythonCodeBlock" class="code-block"></pre>
+              </section>
+            </section>
+
+            <section id="screen-upload" class="screen-panel">
+              <div class="screen-header"><div><p class="eyebrow">Upload Predictions</p><h3>Submission Artifact</h3></div><button id="uploadSubmissionButton" class="button" type="button">Upload Submission</button></div>
+              <div class="double-grid">
+                <section class="subpanel inset"><div class="subpanel-heading"><div><p class="eyebrow">Artifact</p><h3>Generated File</h3></div></div><div id="artifactCard"></div></section>
+                <section class="subpanel inset"><div class="subpanel-heading"><div><p class="eyebrow">Validation</p><h3>Schema Checks</h3></div></div><div id="uploadValidation"></div></section>
+              </div>
+            </section>
+
+            <section id="screen-stake" class="screen-panel">
+              <div class="screen-header"><div><p class="eyebrow">Staking</p><h3>Conviction Sizing</h3></div><button id="confirmStakeButton" class="button" type="button">Confirm Stake</button></div>
+              <div class="sim-controls two-up">
+                <label>Stake (Sim NMR)<input id="stakeAmount" type="range" min="0" max="100" value="24"><span id="stakeAmountValue">24</span></label>
+                <label>Confidence<input id="confidenceLevel" type="range" min="0" max="100" value="52"><span id="confidenceLevelValue">52</span></label>
+              </div>
+              <div id="stakingCards" class="metrics-grid compact"></div>
+              <div id="stakingWarnings" class="alert-stack"></div>
+            </section>
+
+            <section id="screen-diagnostics" class="screen-panel">
+              <div class="screen-header"><div><p class="eyebrow">Diagnostics</p><h3>Corr, MMC, Sharpe, Drawdown, Exposure</h3></div></div>
+              <div id="diagnosticCards" class="metrics-grid"></div>
+              <div class="double-grid">
+                <section class="subpanel inset"><div class="subpanel-heading"><div><p class="eyebrow">Era History</p><h3>Resolved Round</h3></div></div><div id="resultTable" class="simulation-table"></div></section>
+                <section class="subpanel inset"><div class="subpanel-heading"><div><p class="eyebrow">Interpretation</p><h3>Diagnosis</h3></div></div><div id="diagnosisCard" class="diagnosis-card"></div></section>
+              </div>
+            </section>
+
+            <section id="screen-history" class="screen-panel">
+              <div class="screen-header"><div><p class="eyebrow">Era History</p><h3>Archive and Review</h3></div></div>
+              <div id="historySummary" class="metrics-grid compact"></div>
+              <div id="historyList" class="history-list"></div>
+            </section>
+
+            <section id="screen-leaderboard" class="screen-panel">
+              <div class="screen-header"><div><p class="eyebrow">Leaderboard</p><h3>Simulated Tournament Field</h3></div></div>
+              <div id="leaderboardCards" class="metrics-grid compact"></div>
+              <div id="leaderboardTable" class="simulation-table"></div>
+            </section>
+          </section>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script src="numerai.js"></script>
+</body>
+</html>

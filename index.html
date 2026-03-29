@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ml-academy: ML, Federated Learning, and Tournament Simulation</title>
+  <title>ml-academy: Learning Hub</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -14,173 +14,66 @@
     <header class="hero">
       <div class="hero-copy">
         <p class="eyebrow">ml-academy</p>
-        <h1>Learn machine learning from fundamentals to federated systems and a Numerai-style prediction tournament.</h1>
+        <h1>Learn machine learning fundamentals, federated learning, and the Numerai workflow.</h1>
         <p class="hero-text">
-          Work through compact lessons, answer quick theory checks, and experiment with a simulated model tournament that mirrors the idea of submitting signals on hidden data.
+          Use the lesson path for theory, then move into a dedicated Numerai simulator page for workflow practice, strategy iteration, and simulated Python-based training.
         </p>
       </div>
       <div class="hero-card">
-        <div class="hero-stat">
-          <span class="stat-label">Tracks</span>
-          <strong>3</strong>
-        </div>
-        <div class="hero-stat">
-          <span class="stat-label">Lessons</span>
-          <strong>9</strong>
-        </div>
-        <div class="hero-stat">
-          <span class="stat-label">Mode</span>
-          <strong>Hands-on</strong>
-        </div>
+        <div class="hero-stat"><span class="stat-label">Tracks</span><strong>3</strong></div>
+        <div class="hero-stat"><span class="stat-label">Lessons</span><strong>9</strong></div>
+        <div class="hero-stat"><span class="stat-label">Simulator</span><strong><a class="hero-link" href="numerai.html">Open Page</a></strong></div>
       </div>
     </header>
 
-    <main class="content-grid">
+    <main class="content-grid single-main">
       <aside class="sidebar">
         <section class="panel progress-panel">
-          <div class="panel-heading">
-            <h2>Progress</h2>
-            <span id="progressBadge">0 / 9 complete</span>
-          </div>
-          <div class="progress-bar" aria-hidden="true">
-            <div id="progressFill" class="progress-fill"></div>
-          </div>
+          <div class="panel-heading"><h2>Progress</h2><span id="progressBadge">0 / 9 complete</span></div>
+          <div class="progress-bar" aria-hidden="true"><div id="progressFill" class="progress-fill"></div></div>
           <p id="progressText" class="muted">Start with the basics, then move into distributed learning and tournament practice.</p>
         </section>
-
         <section class="panel">
-          <div class="panel-heading">
-            <h2>Learning Path</h2>
-          </div>
+          <div class="panel-heading"><h2>Learning Path</h2></div>
           <nav id="moduleNav" class="module-nav" aria-label="Learning modules"></nav>
         </section>
       </aside>
 
       <section class="main-column">
-        <section class="panel lesson-panel">
+        <section class="panel launch-panel">
           <div class="panel-heading">
             <div>
-              <p id="lessonTag" class="eyebrow"></p>
-              <h2 id="lessonTitle">Loading…</h2>
+              <p class="eyebrow">Numerai Workflow</p>
+              <h2>Independent Simulator Page</h2>
             </div>
-            <button id="markCompleteButton" class="button secondary" type="button">Mark complete</button>
+            <a class="button" href="numerai.html">Open Simulator</a>
           </div>
+          <p class="lesson-summary">
+            The simulator now lives on its own page with a dedicated workflow UI, strategy controls, diagnostics, leaderboard, and a Python training sample that mimics a real ML loop.
+          </p>
+          <div class="key-points">
+            <article class="key-point"><strong>Dedicated page</strong><span>Separate from the lesson experience so the workflow feels like a real platform.</span></article>
+            <article class="key-point"><strong>Python sample</strong><span>Includes a sample training script that mirrors loading data, fitting a model, and exporting predictions.</span></article>
+            <article class="key-point"><strong>Workflow fidelity</strong><span>Practice download, preview, upload, stake, resolve, and review on one dedicated surface.</span></article>
+          </div>
+        </section>
+
+        <section class="panel lesson-panel">
+          <div class="panel-heading"><div><p id="lessonTag" class="eyebrow"></p><h2 id="lessonTitle">Loading…</h2></div><button id="markCompleteButton" class="button secondary" type="button">Mark complete</button></div>
           <p id="lessonSummary" class="lesson-summary"></p>
           <div id="lessonContent" class="lesson-content"></div>
           <div id="keyPoints" class="key-points"></div>
         </section>
 
         <section class="panel quiz-panel">
-          <div class="panel-heading">
-            <h2>Quick Check</h2>
-            <span id="quizStatus" class="muted">Choose an answer</span>
-          </div>
+          <div class="panel-heading"><h2>Quick Check</h2><span id="quizStatus" class="muted">Choose an answer</span></div>
           <div id="quizQuestion" class="quiz-question"></div>
           <div id="quizOptions" class="quiz-options"></div>
           <div id="quizFeedback" class="quiz-feedback" aria-live="polite"></div>
         </section>
-
-        <section class="panel simulator-panel">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Numerai Simulator</p>
-              <h2>Private round-by-round decision trainer</h2>
-            </div>
-            <button id="newRoundButton" class="button" type="button">Generate new round</button>
-          </div>
-          <p class="lesson-summary">
-            Practice the workflow: inspect feature groups, choose a model style, preview era behavior, submit with conviction, and review whether you found signal or just noise.
-          </p>
-
-          <div id="roundHub" class="metrics-grid"></div>
-
-          <div class="sim-workspace">
-            <section class="subpanel">
-              <div class="subpanel-heading">
-                <div>
-                  <p class="eyebrow">Data Arena</p>
-                  <h3>Feature groups for this round</h3>
-                </div>
-                <span id="regimeBadge" class="badge">Loading</span>
-              </div>
-              <div id="roundMeta" class="meta-grid"></div>
-              <div id="featureGroups" class="feature-grid"></div>
-            </section>
-
-            <section class="subpanel">
-              <div class="subpanel-heading">
-                <div>
-                  <p class="eyebrow">Strategy Lab</p>
-                  <h3>Model and risk setup</h3>
-                </div>
-              </div>
-              <div id="modelOptions" class="model-grid"></div>
-              <div class="sim-controls">
-                <label>
-                  Complexity
-                  <input id="complexity" type="range" min="10" max="100" value="48">
-                  <span id="complexityValue">48</span>
-                </label>
-                <label>
-                  Regularization
-                  <input id="regularization" type="range" min="0" max="100" value="56">
-                  <span id="regularizationValue">56</span>
-                </label>
-                <label>
-                  Stake / conviction
-                  <input id="stake" type="range" min="0" max="100" value="24">
-                  <span id="stakeValue">24</span>
-                </label>
-              </div>
-              <div id="strategyWarnings" class="alert-stack"></div>
-              <div class="action-row">
-                <button id="previewButton" class="button" type="button">Preview strategy</button>
-                <button id="submitButton" class="button secondary" type="button">Submit round</button>
-              </div>
-            </section>
-          </div>
-
-          <div class="sim-workspace">
-            <section class="subpanel">
-              <div class="subpanel-heading">
-                <div>
-                  <p class="eyebrow">Validation Preview</p>
-                  <h3>Before you submit</h3>
-                </div>
-              </div>
-              <div id="previewMetrics" class="metrics-grid compact"></div>
-              <div id="previewTable" class="simulation-table"></div>
-              <div id="previewInsight" class="quiz-feedback neutral"></div>
-            </section>
-
-            <section class="subpanel">
-              <div class="subpanel-heading">
-                <div>
-                  <p class="eyebrow">Round Review</p>
-                  <h3>Outcome and diagnosis</h3>
-                </div>
-              </div>
-              <div id="resultMetrics" class="metrics-grid compact"></div>
-              <div id="resultTable" class="simulation-table"></div>
-              <div id="diagnosisCard" class="diagnosis-card"></div>
-            </section>
-          </div>
-
-          <section class="subpanel history-panel">
-            <div class="subpanel-heading">
-              <div>
-                <p class="eyebrow">Review Dashboard</p>
-                <h3>Recent rounds and recurring mistakes</h3>
-              </div>
-            </div>
-            <div id="historySummary" class="metrics-grid compact"></div>
-            <div id="historyList" class="history-list"></div>
-          </section>
-        </section>
       </section>
     </main>
   </div>
-
   <script src="app.js"></script>
 </body>
 </html>
