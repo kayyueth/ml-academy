@@ -130,3 +130,35 @@ th { color: var(--muted); font-size: 0.88rem; font-weight: 600; }
 .code-panel { overflow: hidden; }
 .code-block { margin: 0; padding: 18px; overflow-x: auto; border-radius: 18px; background: #10262e; color: #f8f4ec; font-size: 0.88rem; line-height: 1.6; }
 @media (max-width: 1120px) { .single-main { grid-template-columns: 1fr; } .wider-platform-body { grid-template-columns: 1fr; } }
+
+.tutorial-panel {
+  position: sticky;
+  top: 18px;
+}
+.tutorial-steps {
+  display: grid;
+  gap: 10px;
+}
+.tutorial-step {
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(20, 33, 61, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+}
+.tutorial-step strong {
+  display: block;
+  margin-bottom: 6px;
+}
+.tutorial-step p {
+  margin: 0;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.tutorial-step.active {
+  background: rgba(239, 125, 87, 0.14);
+  border-color: rgba(239, 125, 87, 0.45);
+}
+.tutorial-step.done {
+  background: rgba(29, 111, 66, 0.1);
+  border-color: rgba(29, 111, 66, 0.25);
+}

@@ -56,12 +56,17 @@
               <div class="subpanel-heading"><div><p class="eyebrow">Journal</p><h3>Strategy Notes</h3></div></div>
               <textarea id="strategyNotes" class="notes-input" placeholder="What changed this round? Why do you trust this setup? What would invalidate it?"></textarea>
             </section>
+            <section class="subpanel tutorial-panel">
+              <div class="subpanel-heading"><div><p class="eyebrow">Guided Tutorial</p><h3>How to use the simulator</h3></div></div>
+              <div id="tutorialSteps" class="tutorial-steps"></div>
+            </section>
           </aside>
 
           <section class="platform-main">
             <section id="screen-dashboard" class="screen-panel active">
               <div class="screen-header"><div><p class="eyebrow">Dashboard</p><h3>Current submission and round state</h3></div></div>
               <div id="dashboardCards" class="metrics-grid"></div>
+              <div id="realismCards" class="metrics-grid compact"></div>
               <div class="double-grid">
                 <section class="subpanel inset"><div class="subpanel-heading"><div><p class="eyebrow">Submission</p><h3>Current Status</h3></div></div><div id="submissionStatusCard"></div></section>
                 <section class="subpanel inset"><div class="subpanel-heading"><div><p class="eyebrow">Behavior</p><h3>Pattern Summary</h3></div></div><div id="dashboardPatternCard"></div></section>
