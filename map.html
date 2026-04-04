@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ml-academy: AI Paradigm Landscape Map</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">ml-academy</p>
+        <h1>AI Paradigm Landscape</h1>
+        <p class="hero-text">
+          An interactive map of 24 training paradigms across three architectural layers — Compute, Coordination, and Control — and three topologies: Centralized, Hybrid, and Federated.
+        </p>
+      </div>
+      <div class="hero-card">
+        <div class="hero-stat"><span class="stat-label">Nodes</span><strong>24</strong></div>
+        <div class="hero-stat"><span class="stat-label">Dimensions</span><strong>6</strong></div>
+        <div class="hero-stat"><span class="stat-label">Full Atlas</span><strong><a class="hero-link" href="paradigm.html">Open</a></strong></div>
+        <div class="hero-stat"><span class="stat-label">Learning Hub</span><strong><a class="hero-link" href="index.html">Back</a></strong></div>
+      </div>
+    </header>
+
+    <!-- Controls bar -->
+    <div class="panel map-controls">
+
+      <div class="map-ctrl-group">
+        <span class="map-ctrl-label">Category</span>
+        <div class="map-ctrl-pills">
+          <button class="map-filter-btn active" data-cat="pretraining"  onclick="toggleCat('pretraining')"  style="--cat:#7F77DD">Self-supervised</button>
+          <button class="map-filter-btn active" data-cat="alignment"    onclick="toggleCat('alignment')"    style="--cat:#534AB7">Alignment</button>
+          <button class="map-filter-btn active" data-cat="peft"         onclick="toggleCat('peft')"         style="--cat:#1D9E75">PEFT</button>
+          <button class="map-filter-btn active" data-cat="federated"    onclick="toggleCat('federated')"    style="--cat:#D4537E">Federated</button>
+          <button class="map-filter-btn active" data-cat="continual"    onclick="toggleCat('continual')"    style="--cat:#BA7517">Continual</button>
+          <button class="map-filter-btn active" data-cat="compression"  onclick="toggleCat('compression')"  style="--cat:#6B7C8A">Compression</button>
+        </div>
+      </div>
+
+      <div class="map-ctrl-divider"></div>
+
+      <div class="map-ctrl-group">
+        <span class="map-ctrl-label">Color by</span>
+        <div class="map-ctrl-pills">
+          <button class="map-dim-btn active" data-view="category" onclick="setDimView('category')">Category</button>
+          <button class="map-dim-btn"        data-view="tier"     onclick="setDimView('tier')">Compute Tier</button>
+          <button class="map-dim-btn"        data-view="privacy"  onclick="setDimView('privacy')">Privacy Level</button>
+        </div>
+      </div>
+
+      <div class="map-ctrl-divider"></div>
+
+      <div class="map-ctrl-group">
+        <span class="map-ctrl-label">Overlay</span>
+        <button class="map-dim-btn" id="connBtn" onclick="toggleConns()">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="flex-shrink:0"><circle cx="2" cy="6" r="1.5"/><circle cx="10" cy="2" r="1.5"/><circle cx="10" cy="10" r="1.5"/><line x1="3.5" y1="5.2" x2="8.5" y2="2.8"/><line x1="3.5" y1="6.8" x2="8.5" y2="9.2"/></svg>
+          Training flow
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Map + detail -->
+    <div class="map-layout">
+
+      <!-- SVG canvas -->
+      <div class="panel map-canvas-panel" id="mapContainer">
+        <svg id="mapSvg" width="100%" style="display:block"></svg>
+        <div id="mapTip" class="map-tip"></div>
+      </div>
+
+      <!-- Detail panel -->
+      <div class="panel map-detail-panel" id="mapDetail">
+        <p class="eyebrow" style="margin-bottom:8px">Select a node</p>
+        <p class="muted" style="margin:0;line-height:1.65">Click any paradigm node on the map to see its dimensional scores, topology, and compute tier.</p>
+      </div>
+
+    </div>
+
+    <!-- Legend -->
+    <div class="panel map-legend">
+
+      <div class="map-legend-group">
+        <span class="map-ctrl-label">Layers</span>
+        <div class="map-legend-items">
+          <div class="map-legend-item"><span class="map-legend-swatch" style="background:rgba(127,119,221,0.22)"></span>Compute</div>
+          <div class="map-legend-item"><span class="map-legend-swatch" style="background:rgba(83,74,183,0.18)"></span>Coordination</div>
+          <div class="map-legend-item"><span class="map-legend-swatch" style="background:rgba(29,158,117,0.2)"></span>Control</div>
+        </div>
+      </div>
+
+      <div class="map-legend-divider"></div>
+
+      <div class="map-legend-group">
+        <span class="map-ctrl-label">Compute tier</span>
+        <div class="map-legend-items">
+          <div class="map-legend-item"><span class="map-legend-dot" style="background:#ef7d57"></span>Frontier (70B+)</div>
+          <div class="map-legend-item"><span class="map-legend-dot" style="background:#ba7517"></span>Large (7–70B)</div>
+          <div class="map-legend-item"><span class="map-legend-dot" style="background:#1D9E75"></span>Efficient (≤7B)</div>
+          <div class="map-legend-item"><span class="map-legend-dot" style="background:#888780"></span>Edge</div>
+        </div>
+      </div>
+
+      <div class="map-legend-divider"></div>
+
+      <div class="map-legend-group">
+        <span class="map-ctrl-label">Connections</span>
+        <div class="map-legend-items">
+          <div class="map-legend-item">
+            <svg width="32" height="10" style="flex-shrink:0"><line x1="0" y1="5" x2="32" y2="5" stroke="rgba(239,125,87,0.7)" stroke-width="2" stroke-dasharray="6 3"/></svg>
+            Pipeline (required)
+          </div>
+          <div class="map-legend-item">
+            <svg width="32" height="10" style="flex-shrink:0"><line x1="0" y1="5" x2="32" y2="5" stroke="rgba(20,33,61,0.3)" stroke-width="1.2" stroke-dasharray="4 4"/></svg>
+            Secondary / alternative
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+  <script src="map.js"></script>
+</body>
+</html>
